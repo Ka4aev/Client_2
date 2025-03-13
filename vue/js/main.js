@@ -32,7 +32,7 @@ Vue.component('column', {
                     </ul>
                 </div>
             </div>
-            <button @click="addCard">Добавить карточку</button>
+            <button v-if="!columnIndex && column.tasks.length < 3" @click="addCard">Добавить карточку</button>
         </div>
     `,
     methods: {
@@ -52,19 +52,7 @@ let app = new Vue({
     el: '#app',
     data: {
         columns: [
-            {
-                title: 'Новые',
-                tasks: [
-                    {
-                        title: 'Стать котиком',
-                        subtoped: [
-                            { text: 'Переодеться', isChecked: false },
-                            { text: 'Мяукнуть', isChecked: false  }
-                        ],
-                        editing: false
-                    }
-                ]
-            },
+            { title: 'Новые', tasks: []  },
             { title: 'В процессе', tasks: [] },
             { title: 'Сделаны', tasks: [] }
         ]
@@ -77,5 +65,10 @@ let app = new Vue({
                 editing: true
             });
         }
+    },
+    computed: {
+        // checkTask(columnIndex) {
+        //     return this.columns[columnIndex].tasks.subtoped.some();
+        // },
     }
 });
