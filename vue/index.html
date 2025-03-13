@@ -12,6 +12,10 @@
 </head>
 <body>
 <div id="app">
+    <h1>Хранение заметок</h1>
+    <div class="columns">
+        <column @add-card="addCard" v-for="(column, index) in columns" :column="column" :column-index="index" :key="index"> </column>
+    </div>
 </div>
 </body>
 </html>
