@@ -54,10 +54,18 @@ h1{
 h2{
     font-family: sans-serif;
 }
-h3{
+h3 {
     color: white;
-    text-transform:uppercase;
+    text-transform: uppercase;
     letter-spacing: 1px;
     word-spacing: 5px;
     font-family: sans-serif;
+}
+.input-text{
+    padding: 13px;
+    border: none;
+    width: 80%;
+}
+.input-text:focus{
+    outline: none;
 }

@@ -14,20 +14,20 @@ Vue.component('column', {
             <h2>{{ column.title }}</h2>
             <div v-for="(task, index) in column.tasks" :key="index">
                 <div v-if="task.editing">
-                    <input v-model="task.title" placeholder="Введите заголовок" />
+                    <input type="text" class="input-text" v-model="task.title" placeholder="Введите заголовок" />
                     <ul>
                         <li v-for="(top, idx) in task.subtoped" :key="idx">
-                            <input v-model="top.text" placeholder="Введите подзадачу" />
+                            <input v-model="top.text"  class="input-text" type="text" placeholder="Введите подзадачу" />
                         </li>
                     </ul>
-                    <button @click="addSubtoped(idx)">Добавить</button>
-                    <button @click="saveCard(index,idx)">Сохранить</button>
+                    <button style="margin-bottom: 10px" @click="addSubtoped(index)">Добавить</button>
+                    <button @click="saveCard(index)">Сохранить</button>
                 </div>
                 <div v-else>
                     <h3>{{ task.title }}</h3>
                     <ul>
                         <li v-for="(top, idx) in task.subtoped" :key="idx">
-                            <input type="checkbox"> {{ top.text }}
+                            <input v-model="top.isChecked" type="checkbox"> {{ top.text }} {{ top.isChecked }}
                         </li>
                     </ul>
                 </div>
@@ -42,8 +42,8 @@ Vue.component('column', {
         saveCard(index) {
             this.column.tasks[index].editing = false;
         },
-        addSubtoped(index ,idx) {
-            this.column.tasks[index].subtoped.push({ text: '' });
+        addSubtoped(index) {
+            this.column.tasks[index].subtoped.push({ text: '', isChecked: false });
         }
     }
 });
@@ -58,8 +58,8 @@ let app = new Vue({
                     {
                         title: 'Стать котиком',
                         subtoped: [
-                            { text: 'Переодеться' },
-                            { text: 'Мяукнуть' }
+                            { text: 'Переодеться', isChecked: false },
+                            { text: 'Мяукнуть', isChecked: false  }
                         ],
                         editing: false
                     }
@@ -73,7 +73,7 @@ let app = new Vue({
         addCard(columnIndex) {
             this.columns[columnIndex].tasks.push({
                 title: '',
-                subtoped: [{ text: '' }],
+                subtoped: [{ text: '', isChecked: false  }],
                 editing: true
             });
         }
