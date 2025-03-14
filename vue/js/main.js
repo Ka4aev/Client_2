@@ -11,15 +11,19 @@ Vue.component('card-component', {
         isFirstColumnBlocked: {
             type: Boolean,
             default: false
+        },
+        columnIndex: {
+            type: Number,
+            required: false
         }
     },
-
     template: `
-        <div class="card">
+        <div class="card" :class="{ 'deadline': isDeadline }">
             <h3 v-if="!card.isEditing">{{ card.title }}</h3>
             <input 
                 v-if="card.isEditing" 
                 type="text" 
+                class="input-text"
                 v-model="card.newTitle" 
                 placeholder="Введите название карточки"
             />
@@ -33,7 +37,7 @@ Vue.component('card-component', {
                         <input 
                             type="checkbox" 
                             v-model="task.completed" 
-                            :disabled="isFirstColumnBlocked || !!card.completedAt" 
+                            :disabled="isFirstColumnBlocked || !!card.completedAt || task.isEditing || card.isEditing" 
                             @change="toggleTaskCompletion(cardIndex, index)">
                         <span v-if="!task.isEditing">{{ task.text }}</span>
                         <input 
@@ -47,15 +51,35 @@ Vue.component('card-component', {
                 </div>
             </div>
 
+            <div v-if="card.isEditing">
+                <label style="font-weight: 600; font-size: 17px">Дедлайн:</label>
+                <input 
+                    type="date" 
+                    v-model="card.newDeadline" 
+                    :min="minDate"
+                />
+            </div>
+
             <button v-if="canAddTask" @click="addTask">Добавить пункт</button>
             
-            <button v-if="card.isEditing" @click="saveCardTitle">Сохранить</button>
+            <button v-if="card.isEditing" @click="saveCard">Сохранить</button>
             <p v-if="card.completedAt">Завершено: {{ card.completedAt }}</p>
+            <p v-if="card.deadline">Дедлайн: {{ formatDeadline(card.deadline) }}</p>
         </div>
     `,
     computed: {
         canAddTask() {
             return !this.card.completedAt && this.card.tasks.length < 5 && !this.isFirstColumnBlocked
+        },
+        isDeadline() {
+            if (!this.card.deadline) return false;
+            const deadlineDate = new Date(this.card.deadline);
+            const now = new Date();
+            const differentInDays = Math.ceil((deadlineDate - now) / (1000 * 60 * 60 * 24));
+            return differentInDays <= 2;
+        },
+        minDate() {
+            return new Date().toISOString().split('T')[0];
         }
     },
     methods: {
@@ -66,18 +90,28 @@ Vue.component('card-component', {
             this.card.tasks[taskIndex].isEditing = false
             this.saveData()
         },
-        saveCardTitle() {
+        saveCard() {
             if (this.card.newTitle) {
-                this.card.title = this.card.newTitle
-                this.card.isEditing = false
-                this.saveData()
+                this.card.title = this.card.newTitle;
             }
+            if (this.card.newDeadline) {
+                this.card.deadline = this.card.newDeadline;
+            }
+            this.card.isEditing = false;
+            this.saveData();
         },
         saveData() {
             this.$emit('save-data')
         },
         toggleTaskCompletion(cardIndex, taskIndex) {
             this.$emit('task-updated', cardIndex, taskIndex)
+        },
+        formatDeadline(date) {
+            return new Date(date).toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
         }
     }
 })
@@ -105,6 +139,7 @@ Vue.component('column', {
                 :key="card.id"
                 :card="card"
                 :cardIndex="index"
+                :columnIndex="columnIndex"
                 :is-first-column-blocked="isFirstColumnBlocked"
                 @save-data="$emit('save-data')"
                 @task-updated="$emit('task-updated', columnIndex, index)"></card-component>
@@ -145,7 +180,9 @@ const app = new Vue({
                 tasks: [{ text: '', completed: false, isEditing: true }],
                 completedAt: null,
                 isEditing: true,
-                newTitle: ''
+                newTitle: '',
+                newDeadline: '',
+                deadline: null
             }
             this.columns[columnIndex].cards.push(newCard)
             this.saveData()

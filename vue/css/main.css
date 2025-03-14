@@ -2,69 +2,177 @@ body, html {
     background: #f1f1f1;
     margin: 50px auto;
     padding-inline: 50px;
+    font-family: 'Arial', sans-serif;
 }
+
 .columns {
     display: grid;
-    flex-wrap: wrap;
     gap: 30px;
-    grid-template: 1fr / 1fr 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
 }
+
 .column {
-    box-shadow: 0 0 10px 0 rgba(40, 40, 40, 0.1);
-    padding: 32px;
-    display: flex;
-    gap: 30px;
-    flex-direction: column;
-}
-.column ul {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    list-style-type: none;
-    font-size: 20px;
     background: #ffffff;
-    padding: 10px;
-    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
+
+.column h2 {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 16px;
+}
+
 .column button {
     width: 100%;
-    padding: 15px;
+    padding: 12px;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     background: #7f7fdf;
-    text-align: center;
-    transition: all .3s ease-in-out;
     color: white;
-    cursor: pointer;
-    font-family: sans-serif;
+    font-size: 16px;
     font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
 }
+
 .column button:hover {
     background: #614bdf;
 }
-.column div {
-    background: #b0b4ff;
-    padding: 15px;
-}
+
 h1 {
     text-align: center;
     margin-bottom: 50px;
+    font-size: 32px;
+    color: #333;
 }
-h2 {
-    font-family: sans-serif;
-}
+
 h3 {
-    color: white;
+    color: #000000;
     text-transform: uppercase;
     letter-spacing: 1px;
     word-spacing: 5px;
     font-family: sans-serif;
+    font-size: 18px;
+    margin-bottom: 16px;
 }
+
 .input-text {
-    padding: 13px;
-    border: none;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
     width: 80%;
+    font-size: 16px;
+    transition: border-color 0.3s ease-in-out;
 }
+
 .input-text:focus {
     outline: none;
+    border-color: #7f7fdf;
+}
+
+.card {
+    background: linear-gradient(135deg, #ffffff, #c6c6c6);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    animation: shimmer 3s infinite linear;
+    background-size:200% ;
+    flex-direction: column;
+    gap: 16px;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.card.deadline {
+    background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+    animation: shimmer 3s infinite linear;
+}
+
+.card.deadline:hover {
+    animation: pulsation 1.5s infinite;
+}
+
+.task {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.task label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    color: #333;
+}
+
+.task input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.task input[type="text"] {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    width: 100%;
+    transition: border-color 0.3s ease-in-out;
+}
+
+.task input[type="text"]:focus {
+    outline: none;
+    border-color: #7f7fdf;
+}
+
+.task button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: #7f7fdf;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
+}
+
+.task button:hover {
+    background: #614bdf;
+}
+
+@keyframes pulsation {
+    0% {
+        transform: scale(1);
+        background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+    }
+    50% {
+        transform: scale(1.02);
+        background: linear-gradient(135deg, #ff8488, #ffa58c);
+    }
+    100% {
+        transform: scale(1);
+        background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -100% 0;
+    }
+    100% {
+        background-position: 100% 0;
+    }
 }
