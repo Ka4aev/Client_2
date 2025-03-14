@@ -7,6 +7,10 @@ Vue.component('column', {
         columnIndex: {
             type: Number,
             required: true
+        },
+        locked: {
+            type: Boolean,
+            default: false
         }
     },
     template: `
@@ -27,12 +31,13 @@ Vue.component('column', {
                     <h3>{{ task.title }}</h3>
                     <ul>
                         <li v-for="(top, idx) in task.subtoped" :key="idx">
-                            <input v-model="top.isChecked" type="checkbox"> {{ top.text }} {{ top.isChecked }}
+                            <input v-model="top.isChecked" type="checkbox" @change="updateTaskStatus(index)"> {{ top.text }} {{ top.isChecked }}
                         </li>
                     </ul>
+                    <p v-if="task.completedDate">Завершено: {{ task.completedDate }}</p>
                 </div>
             </div>
-            <button v-if="!columnIndex && column.tasks.length < 3" @click="addCard">Добавить карточку</button>
+            <button v-if="!columnIndex && column.tasks.length < 3 && !locked" @click="addCard">Добавить карточку</button>
         </div>
     `,
     methods: {
@@ -43,7 +48,12 @@ Vue.component('column', {
             this.column.tasks[index].editing = false;
         },
         addSubtoped(index) {
-            this.column.tasks[index].subtoped.push({ text: '', isChecked: false });
+            if (this.column.tasks[index].subtoped.length < 5) {
+                this.column.tasks[index].subtoped.push({ text: '', isChecked: false });
+            }
+        },
+        updateTaskStatus(index) {
+            this.$emit('update-task-status', this.columnIndex, index);
         }
     }
 });
@@ -52,7 +62,7 @@ let app = new Vue({
     el: '#app',
     data: {
         columns: [
-            { title: 'Новые', tasks: []  },
+            { title: 'Новые', tasks: [] },
             { title: 'В процессе', tasks: [] },
             { title: 'Сделаны', tasks: [] }
         ]
@@ -61,14 +71,55 @@ let app = new Vue({
         addCard(columnIndex) {
             this.columns[columnIndex].tasks.push({
                 title: '',
-                subtoped: [{ text: '', isChecked: false  }],
+                subtoped: [{ text: '', isChecked: false }],
                 editing: true
             });
+            this.saveData();
+        },
+        updateTaskStatus(columnIndex, taskIndex) {
+            const task = this.columns[columnIndex].tasks[taskIndex];
+            const completedCount = task.subtoped.filter(top => top.isChecked).length;
+            const totalCount = task.subtoped.length;
+            const completionPercentage = (completedCount / totalCount) * 100;
+
+            if (columnIndex === 0 && completionPercentage > 50) {
+                if (this.columns[1].tasks.length < 5) {
+                    this.moveTask(columnIndex, taskIndex, 1);
+                } else {
+                    this.lockFirstColumn();
+                }
+            } else if (columnIndex === 1 && completionPercentage === 100) {
+                task.completedDate = new Date().toLocaleString();
+                this.moveTask(columnIndex, taskIndex, 2);
+            }
+            this.saveData();
+        },
+        moveTask(fromColumnIndex, taskIndex, toColumnIndex) {
+            const task = this.columns[fromColumnIndex].tasks.splice(taskIndex, 1)[0];
+            this.columns[toColumnIndex].tasks.push(task);
+        },
+        lockFirstColumn() {
+            this.columns[0].locked = true;
+        },
+        unlockFirstColumn() {
+            this.columns[0].locked = false;
+        },
+        saveData() {
+            localStorage.setItem('todoAppData', JSON.stringify(this.columns));
+        },
+        loadData() {
+            const data = localStorage.getItem('todoAppData');
+            if (data) {
+                this.columns = JSON.parse(data);
+            }
         }
     },
     computed: {
-        // checkTask(columnIndex) {
-        //     return this.columns[columnIndex].tasks.subtoped.some();
-        // },
+        isFirstColumnLocked() {
+            return this.columns[1].tasks.length >= 5;
+        }
+    },
+    mounted() {
+        this.loadData();
     }
 });
