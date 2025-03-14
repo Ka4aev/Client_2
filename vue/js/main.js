@@ -13,6 +13,7 @@ Vue.component('card-component', {
             default: false
         }
     },
+
     template: `
         <div class="card">
             <h3 v-if="!card.isEditing">{{ card.title }}</h3>
@@ -33,7 +34,7 @@ Vue.component('card-component', {
                             type="checkbox" 
                             v-model="task.completed" 
                             :disabled="isFirstColumnBlocked || !!card.completedAt" 
-                            @change="$emit('task-updated', cardIndex)">
+                            @change="toggleTaskCompletion(cardIndex, index)">
                         <span v-if="!task.isEditing">{{ task.text }}</span>
                         <input 
                             v-if="task.isEditing" 
@@ -74,6 +75,9 @@ Vue.component('card-component', {
         },
         saveData() {
             this.$emit('save-data')
+        },
+        toggleTaskCompletion(cardIndex, taskIndex) {
+            this.$emit('task-updated', cardIndex, taskIndex)
         }
     }
 })
@@ -150,18 +154,29 @@ const app = new Vue({
             this.columns[columnIndex].cards[cardIndex].tasks.push({ text, completed: false })
             this.saveData()
         },
-        updateColumns(columnIndex, cardIndex) {
+        updateColumns(columnIndex, cardIndex, taskIndex) {
             const tasks = this.columns[columnIndex].cards[cardIndex].tasks
             const completedTasks = tasks.filter(item => item.completed)
             const progress = completedTasks.length / tasks.length
 
-            if (columnIndex === 0 && progress > 0.5 && this.columns[1].cards.length < 5) this.moveCard(columnIndex, cardIndex, 1)
-            else if (progress === 1) this.moveCard(columnIndex, cardIndex, 2)
+            if (columnIndex === 0 && progress > 0.5 && this.columns[1].cards.length < 5) {
+                this.moveCard(columnIndex, cardIndex, 1)
+            } else if (progress === 1) {
+                this.moveCard(columnIndex, cardIndex, 2)
+            } else if (columnIndex === 1 && progress < 0.5) {
+                this.moveCardBack(columnIndex, cardIndex, 0)
+            }
             this.saveData()
         },
         moveCard(columnIndex, cardIndex, toIndex) {
             const [card] = this.columns[columnIndex].cards.splice(cardIndex, 1)
             if (toIndex === 2) card.completedAt = new Date().toLocaleString()
+            this.columns[toIndex].cards.push(card)
+            this.saveData()
+        },
+        moveCardBack(columnIndex, cardIndex, toIndex) {
+            const [card] = this.columns[columnIndex].cards.splice(cardIndex, 1)
+            card.completedAt = null
             this.columns[toIndex].cards.push(card)
             this.saveData()
         },
