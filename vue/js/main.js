@@ -1,3 +1,83 @@
+Vue.component('card-component', {
+    props: {
+        card: {
+            type: Object,
+            required: true
+        },
+        cardIndex: {
+            type: Number,
+            required: true
+        },
+        isFirstColumnBlocked: {
+            type: Boolean,
+            default: false
+        }
+    },
+    template: `
+        <div class="card">
+            <h3 v-if="!card.isEditing">{{ card.title }}</h3>
+            <input 
+                v-if="card.isEditing" 
+                type="text" 
+                v-model="card.newTitle" 
+                placeholder="Введите название карточки"
+            />
+            
+            <div>
+                <div 
+                    v-for="(task, index) in card.tasks" 
+                    :key="index"
+                    class="task">
+                    <label>
+                        <input 
+                            type="checkbox" 
+                            v-model="task.completed" 
+                            :disabled="isFirstColumnBlocked || !!card.completedAt" 
+                            @change="$emit('task-updated', cardIndex)">
+                        <span v-if="!task.isEditing">{{ task.text }}</span>
+                        <input 
+                            v-if="task.isEditing" 
+                            type="text" 
+                            v-model="task.text" 
+                            placeholder="Введите задачу"
+                        />
+                    </label>
+                    <button v-if="task.isEditing" @click="saveTask(index)">Сохранить</button>
+                </div>
+            </div>
+
+            <button v-if="canAddTask" @click="addTask">Добавить пункт</button>
+            
+            <button v-if="card.isEditing" @click="saveCardTitle">Сохранить</button>
+            <p v-if="card.completedAt">Завершено: {{ card.completedAt }}</p>
+        </div>
+    `,
+    computed: {
+        canAddTask() {
+            return !this.card.completedAt && this.card.tasks.length < 5 && !this.isFirstColumnBlocked
+        }
+    },
+    methods: {
+        addTask() {
+            this.card.tasks.push({ text: '', completed: false, isEditing: true })
+        },
+        saveTask(taskIndex) {
+            this.card.tasks[taskIndex].isEditing = false
+            this.saveData()
+        },
+        saveCardTitle() {
+            if (this.card.newTitle) {
+                this.card.title = this.card.newTitle
+                this.card.isEditing = false
+                this.saveData()
+            }
+        },
+        saveData() {
+            this.$emit('save-data')
+        }
+    }
+})
+
 Vue.component('column', {
     props: {
         column: {
@@ -8,118 +88,85 @@ Vue.component('column', {
             type: Number,
             required: true
         },
-        locked: {
+        isFirstColumnBlocked: {
             type: Boolean,
             default: false
         }
     },
     template: `
         <div class="column">
-            <h2>{{ column.title }}</h2>
-            <div v-for="(task, index) in column.tasks" :key="index">
-                <div v-if="task.editing">
-                    <input type="text" class="input-text" v-model="task.title" placeholder="Введите заголовок" />
-                    <ul>
-                        <li v-for="(top, idx) in task.subtoped" :key="idx">
-                            <input v-model="top.text"  class="input-text" type="text" placeholder="Введите подзадачу" />
-                        </li>
-                    </ul>
-                    <button style="margin-bottom: 10px" @click="addSubtoped(index)">Добавить</button>
-                    <button @click="saveCard(index)">Сохранить</button>
-                </div>
-                <div v-else>
-                    <h3>{{ task.title }}</h3>
-                    <ul>
-                        <li v-for="(top, idx) in task.subtoped" :key="idx">
-                            <input v-model="top.isChecked" type="checkbox" @change="updateTaskStatus(index)"> {{ top.text }} {{ top.isChecked }}
-                        </li>
-                    </ul>
-                    <p v-if="task.completedDate">Завершено: {{ task.completedDate }}</p>
-                </div>
-            </div>
-            <button v-if="!columnIndex && column.tasks.length < 3 && !locked" @click="addCard">Добавить карточку</button>
+            <h2>{{ column.title }}({{column.cards.length}})</h2>
+            <card-component 
+                v-for="(card, index) in column.cards"
+                :key="card.id"
+                :card="card"
+                :cardIndex="index"
+                :is-first-column-blocked="isFirstColumnBlocked"
+                @save-data="$emit('save-data')"
+                @task-updated="$emit('task-updated', columnIndex, index)"></card-component>
+            <button v-if="canAddCard" @click="$emit('add-card', columnIndex)">Добавить карточку</button>
         </div>
     `,
-    methods: {
-        addCard() {
-            this.$emit('add-card', this.columnIndex);
-        },
-        saveCard(index) {
-            this.column.tasks[index].editing = false;
-        },
-        addSubtoped(index) {
-            if (this.column.tasks[index].subtoped.length < 5) {
-                this.column.tasks[index].subtoped.push({ text: '', isChecked: false });
-            }
-        },
-        updateTaskStatus(index) {
-            this.$emit('update-task-status', this.columnIndex, index);
+    computed: {
+        canAddCard() {
+            return this.columnIndex === 0 && this.column.cards.length < 3 && !this.isFirstColumnBlocked
         }
     }
-});
+})
 
-let app = new Vue({
+const app = new Vue({
     el: '#app',
-    data: {
-        columns: [
-            { title: 'Новые', tasks: [] },
-            { title: 'В процессе', tasks: [] },
-            { title: 'Сделаны', tasks: [] }
-        ]
-    },
-    methods: {
-        addCard(columnIndex) {
-            this.columns[columnIndex].tasks.push({
-                title: '',
-                subtoped: [{ text: '', isChecked: false }],
-                editing: true
-            });
-            this.saveData();
-        },
-        updateTaskStatus(columnIndex, taskIndex) {
-            const task = this.columns[columnIndex].tasks[taskIndex];
-            const completedCount = task.subtoped.filter(top => top.isChecked).length;
-            const totalCount = task.subtoped.length;
-            const completionPercentage = (completedCount / totalCount) * 100;
-
-            if (columnIndex === 0 && completionPercentage > 50) {
-                if (this.columns[1].tasks.length < 5) {
-                    this.moveTask(columnIndex, taskIndex, 1);
-                } else {
-                    this.lockFirstColumn();
-                }
-            } else if (columnIndex === 1 && completionPercentage === 100) {
-                task.completedDate = new Date().toLocaleString();
-                this.moveTask(columnIndex, taskIndex, 2);
-            }
-            this.saveData();
-        },
-        moveTask(fromColumnIndex, taskIndex, toColumnIndex) {
-            const task = this.columns[fromColumnIndex].tasks.splice(taskIndex, 1)[0];
-            this.columns[toColumnIndex].tasks.push(task);
-        },
-        lockFirstColumn() {
-            this.columns[0].locked = true;
-        },
-        unlockFirstColumn() {
-            this.columns[0].locked = false;
-        },
-        saveData() {
-            localStorage.setItem('todoAppData', JSON.stringify(this.columns));
-        },
-        loadData() {
-            const data = localStorage.getItem('todoAppData');
-            if (data) {
-                this.columns = JSON.parse(data);
-            }
+    data() {
+        return {
+            columns: JSON.parse(localStorage.getItem("columns")) || [
+                {
+                    title: "Новые",
+                    cards: []
+                },
+                { title: "В процессе", cards: [] },
+                { title: "Завершенные", cards: [] }
+            ]
         }
     },
     computed: {
-        isFirstColumnLocked() {
-            return this.columns[1].tasks.length >= 5;
+        isFirstColumnBlocked() {
+            return this.columns[1].cards.length >= 5
         }
     },
-    mounted() {
-        this.loadData();
+    methods: {
+        addCard(columnIndex) {
+            const newCard = {
+                id: Date.now(),
+                title: '',
+                tasks: [{ text: '', completed: false, isEditing: true }],
+                completedAt: null,
+                isEditing: true,
+                newTitle: ''
+            }
+            this.columns[columnIndex].cards.push(newCard)
+            this.saveData()
+        },
+        addTask(columnIndex, cardIndex, text) {
+            this.columns[columnIndex].cards[cardIndex].tasks.push({ text, completed: false })
+            this.saveData()
+        },
+        updateColumns(columnIndex, cardIndex) {
+            const tasks = this.columns[columnIndex].cards[cardIndex].tasks
+            const completedTasks = tasks.filter(item => item.completed)
+            const progress = completedTasks.length / tasks.length
+
+            if (columnIndex === 0 && progress > 0.5 && this.columns[1].cards.length < 5) this.moveCard(columnIndex, cardIndex, 1)
+            else if (progress === 1) this.moveCard(columnIndex, cardIndex, 2)
+            this.saveData()
+        },
+        moveCard(columnIndex, cardIndex, toIndex) {
+            const [card] = this.columns[columnIndex].cards.splice(cardIndex, 1)
+            if (toIndex === 2) card.completedAt = new Date().toLocaleString()
+            this.columns[toIndex].cards.push(card)
+            this.saveData()
+        },
+        saveData() {
+            localStorage.setItem("columns", JSON.stringify(this.columns))
+        }
     }
-});
+})
